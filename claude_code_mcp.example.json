@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "localrag-edu365": {
+      "command": "/Users/kehindetomiwa/Documents/skttechnologies/projects/localrag/.venv/bin/python",
+      "args": ["-m", "localrag.mcp_server", "--collection", "edu365_docs"]
+    }
+  }
+}
