@@ -18,7 +18,7 @@ def test_splits_on_headers():
     content = "# Overview\nintro text\n\n## Setup\nsetup text\n"
     chunks = chunk_document(content, max_tokens=500, overlap_tokens=50)
 
-    titles = [c.section_title for c in chunks]
+    titles = [c.metadata["section_title"] for c in chunks]
     assert titles == ["Overview", "Setup"]
 
 
@@ -27,7 +27,7 @@ def test_no_headers_falls_back_to_single_chunk():
     chunks = chunk_document(content, max_tokens=500, overlap_tokens=50)
 
     assert len(chunks) == 1
-    assert chunks[0].section_title == "Document"
+    assert chunks[0].metadata["section_title"] == "Document"
 
 
 def test_oversized_section_is_split_with_overlap():
@@ -35,5 +35,5 @@ def test_oversized_section_is_split_with_overlap():
     chunks = chunk_document(content, max_tokens=100, overlap_tokens=10)
 
     assert len(chunks) > 1
-    assert all(c.section_title == "Big" for c in chunks)
-    assert all(c.token_count <= 100 for c in chunks)
+    assert all(c.metadata["section_title"] == "Big" for c in chunks)
+    assert all(c.metadata["token_count"] <= 100 for c in chunks)

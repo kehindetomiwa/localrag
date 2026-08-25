@@ -16,11 +16,31 @@ def test_doc_name_and_group_are_derived_from_path(tmp_path):
 
     docs = load_documents(tmp_path)
 
-    names = {d.doc_name for d in docs}
-    groups = {d.doc_group for d in docs}
+    names = {d.metadata["doc_name"] for d in docs}
+    groups = {d.metadata["doc_group"] for d in docs}
 
     assert names == {"services/auth", "services/billing"}
     assert groups == {"services"}
+
+
+def test_traverses_nested_subfolders():
+    """Regression test: a docs folder whose subfolders contain their own
+    subfolders (e.g. docs/architecture/decisions/*.md) must be walked all
+    the way down, not just one level deep."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "architecture" / "decisions").mkdir(parents=True)
+        (root / "architecture" / "overview.md").write_text("# Overview\ntop level")
+        (root / "architecture" / "decisions" / "adr-001.md").write_text("# ADR 1\nnested")
+
+        docs = load_documents(root)
+        names = {d.metadata["doc_name"] for d in docs}
+        groups = {d.metadata["doc_group"] for d in docs}
+
+        assert names == {"architecture/overview", "architecture/decisions/adr-001"}
+        assert groups == {"architecture", "decisions"}
 
 
 def test_unsupported_extensions_are_skipped(tmp_path):
@@ -30,7 +50,7 @@ def test_unsupported_extensions_are_skipped(tmp_path):
     docs = load_documents(tmp_path)
 
     assert len(docs) == 1
-    assert docs[0].doc_name == "notes"
+    assert docs[0].metadata["doc_name"] == "notes"
 
 
 def test_missing_path_raises(tmp_path):

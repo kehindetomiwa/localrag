@@ -1,7 +1,6 @@
 """Retrieval orchestration: analyze query -> route -> vector search -> rerank."""
 from __future__ import annotations
 
-from ..embeddings import EmbeddingClient
 from ..vectorstore import VectorStore
 from .query_analyzer import analyze_query
 from .reranker import RankedChunk, rerank
@@ -22,7 +21,6 @@ def search(
     (e.g. the MCP tool) doesn't have to do that work itself.
     """
     store = VectorStore(collection_name=collection_name)
-    embedder = EmbeddingClient()
 
     if doc_name is None and doc_group is None:
         known_names = store.list_document_names()
@@ -31,8 +29,5 @@ def search(
         doc_name = intent.doc_name
         doc_group = intent.doc_group
 
-    query_vector = embedder.embed_one(query)
-    hits = store.search(query_vector, top_k=top_k, doc_name=doc_name, doc_group=doc_group)
-
-    candidates = [{"score": hit.score, "payload": hit.payload} for hit in hits]
-    return rerank(query, candidates, top_n=top_n)
+    hits = store.search(query, top_k=top_k, doc_name=doc_name, doc_group=doc_group)
+    return rerank(query, hits, top_n=top_n)

@@ -1,5 +1,7 @@
 """Load files from a directory tree and attach document identity metadata.
 
+Returns LangChain `Document` objects with metadata:
+
 doc_name  -- unique identifier for the document (relative path, no extension)
 doc_group -- the parent directory name; documents in the same folder are
              assumed to follow the same template/structure, which is the
@@ -8,23 +10,20 @@ doc_type  -- file extension, kept for filtering/debugging.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
+
+from langchain_core.documents import Document
 
 SUPPORTED_EXTENSIONS = {".md", ".mdx", ".txt", ".rst"}
 
 
-@dataclass
-class LoadedDocument:
-    doc_name: str
-    doc_group: str
-    doc_type: str
-    source_path: str
-    content: str
+def load_documents(root_path: str | Path) -> list[Document]:
+    """Recursively load every supported file under `root_path`, at any
+    nesting depth -- not just the top level.
 
-
-def load_documents(root_path: str | Path) -> list[LoadedDocument]:
-    """Recursively load every supported file under `root_path`.
+    `Path.rglob("*")` walks the entire directory tree, so files inside
+    subfolders of subfolders (e.g. `docs/architecture/decisions/*.md`) are
+    picked up along with files sitting directly under `root_path`.
 
     `root_path` is a required argument, not a default/constant, so the same
     loader can be pointed at any docs folder for any project.
@@ -35,7 +34,7 @@ def load_documents(root_path: str | Path) -> list[LoadedDocument]:
     if not root.is_dir():
         raise NotADirectoryError(f"Ingestion path is not a directory: {root}")
 
-    documents: list[LoadedDocument] = []
+    documents: list[Document] = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in SUPPORTED_EXTENSIONS:
             continue
@@ -53,12 +52,14 @@ def load_documents(root_path: str | Path) -> list[LoadedDocument]:
             continue
 
         documents.append(
-            LoadedDocument(
-                doc_name=doc_name,
-                doc_group=doc_group,
-                doc_type=path.suffix.lstrip(".").lower(),
-                source_path=str(path),
-                content=content,
+            Document(
+                page_content=content,
+                metadata={
+                    "doc_name": doc_name,
+                    "doc_group": doc_group,
+                    "doc_type": path.suffix.lstrip(".").lower(),
+                    "source_path": str(path),
+                },
             )
         )
     return documents
