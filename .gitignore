@@ -35,5 +35,10 @@ htmlcov/
 .idea/
 .DS_Store
 
+# Local vector database and temporary data
+qdrant_data/
+storage/
+snapshots/
+tmp/
 
 qdrant.exe
